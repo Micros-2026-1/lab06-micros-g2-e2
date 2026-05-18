@@ -301,16 +301,10 @@ Voltaje: 4.902V
 
 ---
 
-## 6. Conclusiones
-
-- Se implementó exitosamente un módulo UART modular y reutilizable, separando la lógica en cabecera (`.h`) e implementación (`.c`).
-- La conversión de enteros a texto ASCII se realizó sin usar funciones de la librería estándar como `printf`, lo que reduce el uso de memoria en el microcontrolador.
-- El manejo del tipo `uint32_t` en la conversión de voltaje es un ejemplo crítico de la importancia de gestionar el tamaño de los datos en sistemas embebidos para evitar desbordamientos.
-- La simulación de señal triangular permite verificar el correcto funcionamiento del módulo en todo el rango del ADC sin necesidad de hardware adicional.
 
 ## Diagramas
 
-![Terminal PuTTY con UART funcionando](Imagenes/Mensaje_Putty.png)
+![Gráfica UART](Imagenes/Mensaje_Putty.png)
 
 En esta primera imagen, mediante el programa `PuTTY`, podemos ver el mensaje `HOLA, UART FUNCIONANDO` 
 
@@ -318,5 +312,41 @@ En esta primera imagen, mediante el programa `PuTTY`, podemos ver el mensaje `HO
 
 En esta segunda imagen vemos una gráfica impresa con un script de python en la cual se evidencia como el voltaje sube de 0v a 5v y baja gradualmente
 
-## Evidencias de implementación
+## Cuestionario de Evaluación y Análisis
+
+### 1. ¿Por qué el protocolo UART se clasifica como una comunicación asíncrona y qué función cumplen los bits de inicio (Start) y parada (Stop)?
+Se clasifica como asíncrona porque **no utiliza una línea física de reloj común (SCL)** para sincronizar los transmisores y receptores. En su lugar, ambos dispositivos deben configurarse de manera independiente a la misma velocidad de transmisión (*Baud Rate*). 
+* **Bit de Inicio (Start):** Es un bit en estado bajo (0 lógico) que rompe el estado de reposo de la línea (que siempre es alto, 1 lógico). Le avisa al receptor que un paquete de datos está por comenzar para que sincronice su temporizador interno.
+* **Bit de Parada (Stop):** Es un bit en estado alto (1 lógico) que se sitúa al final del byte transmitido para indicar la culminación del paquete y regresar la línea al estado de reposo, preparándola para una nueva transmisión.
+
+### 2. Desglose el cálculo del Baud Rate realizado en el informe y explique qué efecto tendría en la comunicación si el oscilador del PIC sufriera una desviación de frecuencia del 5%.
+El cálculo configurado en el registro `SPBRG1` con un divisor de 64 (baja velocidad, `BRGH = 0` y `BRG16 = 0`) es:
+$$SPBRG1 = \frac{F_{OSC}}{64 \times \text{Baudrate}} - 1 = \frac{16,000,000}{64 \times 9600} - 1 = \frac{16,000,000}{614,400} - 1 \approx 25.04 \rightarrow 25$$
+
+Si el oscilador interno sufre una desviación del 5%, la frecuencia de muestreo real en los pines TX/RX variará de forma equivalente. Dado que el protocolo UART tolera un desfasaje máximo acumulado de aproximadamente el **2.5% al 3% entre muestreos de bits**, una desviación del 5% rompería la sincronización de los relojes internos. El terminal serial en la PC interpretaría erróneamente los bits recibidos, provocando la aparición de caracteres basura (ruido/corrupción de datos) en la pantalla.
+
+### 3. En la función `UART_WriteChar()`, se realiza un bucle de espera utilizando la instrucción `while (!TXSTA1bits.TRMT);`. Explique la función de este bit y por qué es crítico realizar esta comprobación antes de escribir en `TXREG1`.
+El bit `TRMT` (*Transmit Shift Register Status bit*) es de **sólo lectura** e indica el estado del registro de desplazamiento de transmisión (TSR). Cuando `TRMT = 1`, significa que el registro TSR está completamente vacío; cuando `TRMT = 0`, el hardware todavía se encuentra enviando un byte bit a bit por el pin físico. 
+
+Esta comprobación es crítica mediante técnica de *polling* (espera activa) debido a que si se escribe un nuevo dato en el buffer `TXREG1` mientras el hardware sigue desplazando el byte anterior, se provocaría una **colisión de datos por sobreescritura**. El dato previo se corrompería antes de terminar de salir, perdiéndose la integridad de la información.
+
+### 4. Explique detalladamente la ventaja del uso de punteros (`const char* str`) en la función `UART_WriteString()` en términos de gestión de memoria RAM del microcontrolador.
+En el microcontrolador PIC18F45K22, la memoria RAM es un recurso limitado. Si la función pasara la cadena de caracteres por valor (creando una copia local completa del arreglo), se duplicaría el consumo de memoria RAM de forma innecesaria para albergar temporalmente el texto. Al pasar un puntero `const char* str`, solo se transmite a la función una variable de **2 bytes** que almacena la dirección de memoria exacta de la memoria de programa donde reside la cadena original. El operador `*str++` permite leer el dato de forma directa y secuencial utilizando direccionamiento indirecto, optimizando drásticamente el espacio de memoria.
+
+---
+
+## 8. Conclusiones
+
+* Se implementó con éxito un sistema de comunicación asíncrona UART utilizando el módulo periférico EUSART en modo maestro, logrando la transmisión limpia de strings y variables numéricas convertidas hacia una interfaz externa en la PC.
+* Se comprobó la alta eficiencia del uso de aritmética de enteros escalada (operando con milivoltios) junto con técnicas de conversión manual a caracteres ASCII. Este enfoque evitó el uso de tipos de datos flotantes (`float`) y librerías pesadas como `printf`, disminuyendo de manera sustancial la huella en memoria Flash del microcontrolador.
+* Se evidenció que la correcta calibración de los registros de control de baudios (`SPBRG`), las directivas de velocidad y la coincidencia exacta de los parámetros de comunicación (9600 bps, 8 bits de datos, sin paridad y 1 bit de parada) son prerrequisitos mandatorios para garantizar la integridad física de la trama de datos y evitar pérdidas por desincronización.
+
+---
+
+## 9. Referencias Bibliográficas
+
+* **[1]** Microchip Technology Inc., "PIC18(L)F2X/4XK22 Data Sheet - Enhanced Universal Synchronous Asynchronous Receiver Transmitter (EUSART)," Chandler, AZ, USA, Doc. DS40001412G, Secc. 16, pp. 267-298, 2010.
+* **[2]** M. A. Mazidi, R. D. McKinlay y D. Causey, *PIC Microcontroller and Embedded Systems: Using Assembly and C for PIC18*, 1.ª ed. Upper Saddle River, NJ, USA: Prentice Hall, 2007.
+* **[3]** J. I. Angulo, *Microcontroladores PIC: Diseño práctico de aplicaciones*, 3.ª ed. Madrid, España: McGraw-Hill, 2003.
+
 
