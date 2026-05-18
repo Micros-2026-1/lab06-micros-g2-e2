@@ -316,7 +316,7 @@ Voltaje: 4.902V
 Para la correcta implementación de la comunicación serial asíncrona, se estructuró el siguiente esquema de conexiones entre el microcontrolador PIC18F45K22, el conversor USB-UART y la PC:
 
 <p align="center">
-  <img src="Gráfica UART](UART.png" alt="Esquema de conexiones de la comunicación UART" width="550"/>
+ <img src="UART.png" alt="Esquema de conexiones de la comunicación UART" width="550"/>
 </p>
 
 *Nota: Asegúrese de que la imagen del diagrama esté subida en la raíz del repositorio con el nombre `diagrama_conexion_uart.png`. En las conexiones físicas reales o simuladas, es mandatorio cruzar las líneas de transmisión y recepción: el pin `RC6/TX` del PIC se conecta al pin `RX` del módulo conversor, y el pin `RC7/RX` del PIC se conecta al pin `TX` del módulo conversor. Ambos dispositivos deben compartir una referencia de tierra común (GND).*
@@ -330,7 +330,7 @@ Para la correcta implementación de la comunicación serial asíncrona, se estru
 A continuación, se adjuntan las capturas de pantalla y evidencias del funcionamiento del sistema, donde se observa la terminal serial (PuTTY / Tera Term / Monitor Serial) recibiendo y formateando correctamente la señal triangular simulada en voltios con tres decimales de precisión:
 
 <p align="center">
-  <img src="Terminal PuTTY con UART funcionando](Mensaje_Putty.png" alt="Monitoreo de datos en la terminal serial" width="500"/>
+ <img src="Mensaje_Putty.png" alt="Monitoreo de datos en la terminal serial" width="500"/>
 </p>
 
 ---
