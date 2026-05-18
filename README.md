@@ -310,11 +310,13 @@ Voltaje: 4.902V
 
 ## Diagramas
 
-![Gráfica UART](UART.png)
+![Terminal PuTTY con UART funcionando](Imagenes/Mensaje_Putty.png)
 
+En esta primera imagen, mediante el programa `PuTTY`, podemos ver el mensaje `HOLA, UART FUNCIONANDO` 
 
+![Gráfica UART 0v a 5v](Imagenes/UART.png)
 
-![Terminal PuTTY con UART funcionando](Mensaje_Putty.png)
+En esta segunda imagen vemos una gráfica impresa con un script de python en la cual se evidencia como el voltaje sube de 0v a 5v y baja gradualmente
 
 ## Evidencias de implementación
 
